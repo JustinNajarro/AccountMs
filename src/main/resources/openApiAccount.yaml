@@ -1,0 +1,269 @@
+openapi: 3.0.1
+info:
+  title: MicroServicio Banco XYZ
+  description: API para gestionar cuentas bancarias de clientes
+  version: 1.0.0
+servers:
+  - url: http://localhost:8082
+    description: Servidor Local para AccountMs
+
+paths:
+  /cuentas:
+    get:
+      summary: Listar todas las cuentas bancarias
+      operationId: listAllAccounts
+      tags:
+        - Cuentas
+      responses:
+        '200':
+          description: Lista de cuentas bancarias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CuentaResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Crear una nueva cuenta bancaria para un cliente
+      operationId: createAccount
+      tags:
+        - Cuentas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CuentaRequest'
+      responses:
+        '201':
+          description: Cuenta bancaria creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuentaResponse'
+        '400':
+          description: Solicitud inválida (saldo inicial incorrecto o cliente inexistente)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /cuentas/{id}:
+    get:
+      summary: Obtener detalles de una cuenta bancaria por su ID
+      operationId: getAccountById
+      tags:
+        - Cuentas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cuenta bancaria encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuentaResponse'
+        '404':
+          description: Cuenta no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Eliminar una cuenta bancaria por su ID
+      operationId: deleteAccountById
+      tags:
+        - Cuentas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Cuenta eliminada exitosamente
+        '404':
+          description: Cuenta no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /cuentas/numero/{numeroCuenta}/saldo-tipo:
+    get:
+      summary: Obtener el saldo y tipo de cuenta por número de cuenta
+      operationId: getAccountBalanceAndType
+      tags:
+        - Cuentas
+      parameters:
+        - name: numeroCuenta
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalles del saldo y tipo de cuenta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaldoTipoResponse'
+        '404':
+          description: Cuenta no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /cuentas/numero/{numeroCuenta}/actualizar-saldo:
+    put:
+      summary: Actualizar el saldo de la cuenta bancaria
+      operationId: updateAccountBalance
+      tags:
+        - Cuentas
+      parameters:
+        - name: numeroCuenta
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nuevoSaldo:
+                  type: number
+                  format: double
+                  description: Nuevo saldo de la cuenta
+              required:
+                - nuevoSaldo
+      responses:
+        '200':
+          description: Saldo actualizado exitosamente
+        '404':
+          description: Cuenta no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    CuentaRequest:
+      type: object
+      properties:
+        numeroCuenta:
+          type: string
+        saldo:
+          type: number
+          format: double
+          default: 0.0
+        tipoCuenta:
+          type: string
+          enum:
+            - AHORROS
+            - CORRIENTE
+        clienteId:
+          type: integer
+      required:
+        - numeroCuenta
+        - saldo
+        - tipoCuenta
+        - clienteId
+
+    CuentaResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        numeroCuenta:
+          type: string
+        saldo:
+          type: number
+          format: double
+        tipoCuenta:
+          type: string
+          enum:
+            - AHORROS
+            - CORRIENTE
+        clienteId:
+          type: integer
+      required:
+        - id
+        - numeroCuenta
+        - saldo
+        - tipoCuenta
+        - clienteId
+
+    SaldoTipoResponse:
+      type: object
+      properties:
+        saldo:
+          type: number
+          format: double
+        tipoCuenta:
+          type: string
+          enum:
+            - AHORROS
+            - CORRIENTE
+      required:
+        - saldo
+        - tipoCuenta
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        details:
+          type: string
+      required:
+        - code
+        - message
